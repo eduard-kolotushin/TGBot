@@ -6,8 +6,8 @@ TGTOKEN = Config.TGTOKEN
 bot = telebot.TeleBot(TGTOKEN)
 
 
-@bot.message_handlers(commands=['start'])
-def url(message):
+@bot.message_handler(commands=['start'])
+def start(message):
     markup = types.InlineKeyboardMarkup()
     btn = types.InlineKeyboardButton(text='My VK',
                                      url='https://vk.com/eduard_kolotushin')
