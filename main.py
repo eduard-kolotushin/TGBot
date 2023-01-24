@@ -1,14 +1,14 @@
 import telebot
 from telebot import types
 from config import Config
-from pyChatGPT import ChatGPT
+import openai
 import re
 
 TGTOKEN = Config.TGTOKEN
 GPTTOKEN = Config.GPTTOKEN
 
 bot = telebot.TeleBot(TGTOKEN)
-chat = ChatGPT(GPTTOKEN)
+openai.api_key = GPTTOKEN
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -32,8 +32,17 @@ def start(message):
 @bot.message_handler(content_types=['text'])
 def reply_to_text(message):
     txt = message.text
-    resp = chat.send_message(txt)
-    bot.send_message(message.from_user.id, resp['message'])
+    resp = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=txt,
+        temperature=0.5,
+        max_tokens=1000,
+        top_p=1.0,
+        frequency_penalty=0.5,
+        presence_penalty=0.0
+    )
+    resp_str = resp["choices"][0]["text"]
+    bot.send_message(message.from_user.id, resp_str)
 
 
 bot.polling(none_stop=True, interval=0)
