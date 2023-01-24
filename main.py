@@ -35,11 +35,11 @@ def reply_to_text(message):
     resp = openai.Completion.create(
         model="text-davinci-003",
         prompt=txt,
-        temperature=0.5,
+        temperature=0.7,
         max_tokens=1000,
         top_p=1.0,
         frequency_penalty=0.5,
-        presence_penalty=0.0
+        presence_penalty=0.6
     )
     resp_str = resp["choices"][0]["text"]
     bot.send_message(message.from_user.id, resp_str)
