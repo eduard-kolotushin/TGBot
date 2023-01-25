@@ -43,10 +43,10 @@ def start(message):
 @bot.message_handler(content_types=['text'])
 def reply_to_text(message):
     txt = message.text
-    print(txt)
+    # print(txt)
     logger.info(txt)
     history_txt = manager.extract_dialog(message.from_user.id)
-    print(history_txt)
+    # print(history_txt)
     txt_full = txt
     logger.info(txt_full)
     if history_txt is not None:

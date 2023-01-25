@@ -37,12 +37,15 @@ class Manager:
                 if (datetime.datetime.now() - history_inst.update_time) > datetime.timedelta(hours=1):
                     h_to_del.append(history_inst)
             self.local_history[chat_id] = [v for v in self.local_history[chat_id] if v not in h_to_del]
-        print(self.local_history)
-        await asyncio.sleep(60)
+        # print(self.local_history)
+        for chat_id, history in self.local_history.items():
+            if len(history) > 4:
+                self.local_history[chat_id] = self.local_history[chat_id][-4:]
+        await asyncio.sleep(20)
 
     def add_history(self, history):
         chat_id = history.chat_id
-        print(history)
+        # print(history)
         if chat_id in self.local_history:
             self.local_history[chat_id].append(history)
         else:
@@ -54,7 +57,7 @@ class Manager:
             return text
         history = self.local_history[chat_id]
         text = "".join([h.history for h in history])
-        print(text)
+        # print(text)
         return text
 
     async def run(self):
