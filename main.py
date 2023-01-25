@@ -1,14 +1,25 @@
+import datetime
 import telebot
 from telebot import types
 from config import Config
 import openai
+from utils.manager import History, Manager, Base
+from utils import engine
+import asyncio
+import logging
+from threading import Thread
 import re
 
 TGTOKEN = Config.TGTOKEN
 GPTTOKEN = Config.GPTTOKEN
 
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 bot = telebot.TeleBot(TGTOKEN)
 openai.api_key = GPTTOKEN
+manager = Manager()
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -32,9 +43,15 @@ def start(message):
 @bot.message_handler(content_types=['text'])
 def reply_to_text(message):
     txt = message.text
+    logger.info(txt)
+    history_txt = manager.extract_dialog(str(message.from_user.id))
+    txt_full = txt
+    logger.info(txt_full)
+    if history_txt is not None:
+        txt_full = "\n".join([history_txt, txt])
     resp = openai.Completion.create(
         model="text-davinci-003",
-        prompt=txt,
+        prompt=txt_full,
         temperature=0.7,
         max_tokens=1000,
         top_p=1.0,
@@ -42,7 +59,14 @@ def reply_to_text(message):
         presence_penalty=0.6
     )
     resp_str = resp["choices"][0]["text"]
+    logger.info(resp_str)
+    history = History(chat_id=message.from_user.id,
+                      history="\n".join([txt, resp_str]),
+                      update_time=datetime.datetime.now())
+    manager.add_history(history)
     bot.send_message(message.from_user.id, resp_str)
 
 
+asyncio.ensure_future(manager.run())
+thread = Thread(target=loop.run_forever, daemon=True)
 bot.polling(none_stop=True, interval=0)
