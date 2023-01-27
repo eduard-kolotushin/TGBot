@@ -43,7 +43,10 @@ class Manager:
                 self.local_history[chat_id] = self.local_history[chat_id][-4:]
         await asyncio.sleep(20)
 
-    def add_history(self, history):
+    def add_history(self, chat_id, history, update_time):
+        history = History(chat_id=chat_id,
+                          history=history,
+                          update_time=update_time)
         chat_id = history.chat_id
         # print(history)
         if chat_id in self.local_history:
