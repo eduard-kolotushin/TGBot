@@ -3,15 +3,18 @@ import telebot
 from telebot import types
 from config import Config
 import openai
+from utils.audio_converter import convert_audio_to_text
 from utils.manager import History, Manager, Base
 from utils import engine
 import asyncio
 import logging
 from threading import Thread
 import re
+import os
 
 TGTOKEN = Config.TGTOKEN
 GPTTOKEN = Config.GPTTOKEN
+FILEFOLDER = Config.FILEFOLDER
 
 # loop = asyncio.new_event_loop()
 # asyncio.set_event_loop(loop)
@@ -29,15 +32,6 @@ def start(message):
     #                                  url='')
     # markup.add(btn)
     bot.send_message(message.from_user.id, "This is my first own telegram bot...")
-
-
-# @bot.message_handler(content_types=['text'])
-# def reply_to_text(message):
-#     txt = message.text
-#     if len(re.findall(r'linux', txt, re.I)) > 0:
-#         bot.send_message(message.from_user.id, "Linux related operation...")
-#     else:
-#         bot.send_message(message.from_user.id, "Non linux related operation...")
 
 
 @bot.message_handler(content_types=['text'])
@@ -66,6 +60,46 @@ def reply_to_text(message):
                       history="\n".join([txt, resp_str]),
                       update_time=datetime.datetime.now())
     manager.add_history(history)
+    bot.send_message(message.from_user.id, resp_str)
+
+
+# handler for audio from telegram
+@bot.message_handler(content_types=['audio'])
+def reply_to_audio(message):
+    # print(message)
+    file_info = bot.get_file(message.audio.file_id)
+    # print(file_info)
+    downloaded_file = bot.download_file(file_info.file_path)
+    # print(downloaded_file)
+    with open(os.path.join(FILEFOLDER, "audio.ogg"), 'wb') as new_file:
+        new_file.write(downloaded_file)
+    # print("file saved")
+    bot.send_message(message.from_user.id, "file saved")
+
+
+# handler for voice from telegram
+@bot.message_handler(content_types=['voice'])
+def reply_to_voice(message):
+    # print(message)
+    file_info = bot.get_file(message.voice.file_id)
+    # print(file_info)
+    downloaded_file = bot.download_file(file_info.file_path)
+    # print(downloaded_file)
+    with open(os.path.join(FILEFOLDER, "voice.ogg"), 'wb') as new_file:
+        new_file.write(downloaded_file)
+    text = convert_audio_to_text(FILEFOLDER, "voice.ogg")
+    # print("file saved")
+    resp = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=text,
+        temperature=0.9,
+        max_tokens=3000,
+        top_p=1.0,
+        frequency_penalty=0.1,
+        presence_penalty=0.6
+    )
+    resp_str = resp["choices"][0]["text"]
+    logger.info(resp_str)
     bot.send_message(message.from_user.id, resp_str)
 
 
